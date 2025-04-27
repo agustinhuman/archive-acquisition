@@ -152,26 +152,6 @@
         </div>
         <div class="form-container">
             <form id="data-form">
-                <div class="input-group" data-keep="false">
-                    <label for="field1">Field 1</label>
-                    <input type="text" id="field1" name="field1">
-                </div>
-                <div class="input-group" data-keep="false">
-                    <label for="field2">Field 2</label>
-                    <input type="text" id="field2" name="field2">
-                </div>
-                <div class="input-group" data-keep="false">
-                    <label for="field3">Field 3</label>
-                    <input type="text" id="field3" name="field3">
-                </div>
-                <div class="input-group" data-keep="false">
-                    <label for="field4">Field 4</label>
-                    <input type="text" id="field4" name="field4">
-                </div>
-                <div class="input-group" data-keep="false">
-                    <label for="field5">Field 5</label>
-                    <input type="text" id="field5" name="field5">
-                </div>
 
                 <div class="custom-fields-container" id="custom-fields-container">
                     <!-- Custom fields will be added here -->
@@ -192,6 +172,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Load initial image
             fetchNewImage();
+
+            // Add pre-generated custom fields
+            addPreGeneratedCustomFields();
 
             // Toggle keep/clear state for input fields
             const toggleButtons = document.querySelectorAll('.input-group');
@@ -330,9 +313,8 @@
                 },
                 body: JSON.stringify(payload)
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
+            .then(response => {
+                if (response.status === 200) {
                     // Clear fields that are not marked as "keep"
                     document.querySelectorAll('.input-group').forEach(group => {
                         if (group.getAttribute('data-keep') !== 'true') {
@@ -341,16 +323,54 @@
                         }
                     });
 
-                    // Clear all custom fields
-                    document.querySelectorAll('.custom-field').forEach(field => {
-                        field.remove();
-                    });
-
                     // Get a new image
                     fetchNewImage();
+                } else {
+                    alert('Error submitting data. Please try again.');
                 }
             })
             .catch(error => console.error('Error:', error));
+        }
+
+        // Function to add pre-generated custom fields
+        function addPreGeneratedCustomFields() {
+            const preGeneratedFields = [
+                { name: 'Collection', value: '' },
+                { name: 'PhysicalLocation', value: '' },
+                { name: 'OriginalDonor', value: '' }
+            ];
+
+            const container = document.getElementById('custom-fields-container');
+
+            preGeneratedFields.forEach(field => {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'custom-field pre-generated';
+
+                const nameInput = document.createElement('input');
+                nameInput.type = 'text';
+                nameInput.placeholder = 'Name';
+                nameInput.value = field.name;
+                nameInput.readOnly = true; // Make the name field read-only
+
+                const valueInput = document.createElement('input');
+                valueInput.type = 'text';
+                valueInput.placeholder = 'Value';
+                valueInput.value = field.value;
+
+                const removeButton = document.createElement('button');
+                removeButton.type = 'button';
+                removeButton.className = 'remove-field';
+                removeButton.textContent = 'X';
+                removeButton.addEventListener('click', function() {
+                    fieldDiv.remove();
+                });
+
+                fieldDiv.appendChild(nameInput);
+                fieldDiv.appendChild(valueInput);
+                fieldDiv.appendChild(removeButton);
+
+                container.appendChild(fieldDiv);
+            });
         }
 
         // Function to add a custom field

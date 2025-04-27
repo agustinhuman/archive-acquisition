@@ -1,7 +1,7 @@
 [phone]
-ip = "192.168.1.189"
 photo_button_location = [540, 2060]
 photos_folder = "/storage/emulated/0/DCIM/Camera/"
 
 [export]
-root_folder = "/home/alejandro/Documents/archive"
+#root_folder = "/home/alejandro/Documents/archive"
+root_folder = "C:\\Users\\aagus\\Documents\\archive"

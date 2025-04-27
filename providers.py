@@ -13,7 +13,6 @@ class Conf(BaseModel):
     """Image provider configuration"""
     class Phone(BaseModel):
         """Phone configuration"""
-        ip: str
         photo_button_location: list[int] = Field(..., min_length=2, max_length=2)
         photos_folder: str = "/storage/emulated/0/DCIM/Camera/"
 
@@ -41,10 +40,7 @@ class ImageProvider(abc.ABC):
             return self.mock_photo
 
         try:
-            file_path = self._take_photo()
-            if file_path is not None:
-                return open(file_path, 'rb').read()
-            return None
+            return self._take_photo()
         except Exception as e:
             logging.error(f"Error taking photo: {e}")
             return None
@@ -53,7 +49,7 @@ class ImageProvider(abc.ABC):
     def _take_photo(self) -> bytes:
         """Actual implementation of taking a photo."""
 
-OUT_PATH = Path(tempfile.gettempdir()) / "archive" / "original.jpg"
+OUT_PATH =  Path(".original.jpg")
 
 class Phone(ImageProvider):
     def __init__(self, conf, mock_photo: Path | None = None):
@@ -70,7 +66,7 @@ class Phone(ImageProvider):
 
     def _tab(self, coords):
         """Taps on the screen at the given coordinates"""
-        run(f"adb shell input tap {coords[0]} {coords[1]}")
+        run(f'adb shell "input tap {coords[0]} {coords[1]}"')
 
     def _pull(self, remote, local):
         """Pulls a file from the device to local storage"""
@@ -83,10 +79,12 @@ class Phone(ImageProvider):
         self._pull(remote_photo_path, OUT_PATH)
         self._remove_remote_file(remote_photo_path)
         logging.info(f"Took photo: {Path(remote_photo_path).name}")
-        return OUT_PATH.read_bytes()
+        file_bytes = OUT_PATH.read_bytes()
+        OUT_PATH.unlink()
+        return file_bytes
 
     def _update_last_remote_photo(self):
-        return run(f"adb shell find {self.conf.photos_folder} -type f -exec ls -t1 {{}} + | head -1")
+        return run(f'adb shell "find {self.conf.photos_folder} -type f -exec ls -t1 {{}} + | head -1"')
 
     def _get_new_photo_path(self):
         new_photo_path = self.last_photo_remote_path

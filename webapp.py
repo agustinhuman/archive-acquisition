@@ -51,7 +51,7 @@ def get_image() -> ImageData:
     the name of the image (image_name) and the hash of the image (hash)"""
     ctx = get_app_context()
     photo = ctx.provider.take_photo()
-    processed = ctx.preprocessor(photo).run()
+    processed = ctx.preprocessor(photo).run() or photo
     rotated = Rotate(processed, ctx.last_rotation).run()
     ctx.last_image_raw = photo
     ctx.last_image_processed = rotated

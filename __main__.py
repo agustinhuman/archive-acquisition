@@ -11,7 +11,7 @@ from preprocessors import ExtractDocument
 from providers import Phone
 from webapp import app
 
-DEBUG = True
+DEBUG = False
 
 def read_conf() -> dict[str, Any]:
     if len(sys.argv) < 2:
