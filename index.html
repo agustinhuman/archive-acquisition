@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Acquisition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+        }
+        .image-container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 80%;
+            object-fit: contain;
+        }
+        .transform-buttons {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            width: 100%;
+        }
+        .transform-button {
+            margin: 0 10px;
+            padding: 15px;
+            font-size: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #673AB7;
+            color: white;
+        }
+        .form-container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group {
+            margin-bottom: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .input-group label {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .input-group input {
+            font-size: 24px;
+            padding: 15px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            flex: 1;
+        }
+        .input-group.keep {
+            background-color: #e6ffe6;
+        }
+        .input-group.clear {
+            background-color: #ffe6e6;
+        }
+        .buttons-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .button {
+            flex: 1;
+            margin: 0 10px;
+            padding: 20px;
+            font-size: 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .submit-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .retake-button {
+            background-color: #f44336;
+            color: white;
+        }
+        .toggle-button {
+            background-color: #2196F3;
+            color: white;
+        }
+        .add-field-button {
+            margin-top: 10px;
+            padding: 15px;
+            font-size: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #FF9800;
+            color: white;
+            text-align: center;
+        }
+        .custom-fields-container {
+            margin-top: 20px;
+        }
+        .custom-field {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .custom-field input {
+            flex: 1;
+            font-size: 20px;
+            padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            margin-right: 5px;
+        }
+        .remove-field {
+            padding: 10px;
+            font-size: 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="image-container">
+            <img id="captured-image" src="" alt="">
+            <div class="transform-buttons">
+                <button type="button" class="transform-button" id="rotate-left-button">Rotate Left</button>
+                <button type="button" class="transform-button" id="raw-button">Raw</button>
+                <button type="button" class="transform-button" id="rotate-right-button">Rotate Right</button>
+            </div>
+        </div>
+        <div class="form-container">
+            <form id="data-form">
+                <div class="input-group" data-keep="false">
+                    <label for="field1">Field 1</label>
+                    <input type="text" id="field1" name="field1">
+                </div>
+                <div class="input-group" data-keep="false">
+                    <label for="field2">Field 2</label>
+                    <input type="text" id="field2" name="field2">
+                </div>
+                <div class="input-group" data-keep="false">
+                    <label for="field3">Field 3</label>
+                    <input type="text" id="field3" name="field3">
+                </div>
+                <div class="input-group" data-keep="false">
+                    <label for="field4">Field 4</label>
+                    <input type="text" id="field4" name="field4">
+                </div>
+                <div class="input-group" data-keep="false">
+                    <label for="field5">Field 5</label>
+                    <input type="text" id="field5" name="field5">
+                </div>
+
+                <div class="custom-fields-container" id="custom-fields-container">
+                    <!-- Custom fields will be added here -->
+                </div>
+
+                <button type="button" class="add-field-button" id="add-field-button">Add Custom Field</button>
+
+                <div class="buttons-container">
+                    <button type="button" class="button submit-button" id="submit-button">Submit and Continue</button>
+                    <button type="button" class="button retake-button" id="retake-button">Retake</button>
+                    <button type="button" class="button toggle-button" id="toggle-button">Clear all</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load initial image
+            fetchNewImage();
+
+            // Toggle keep/clear state for input fields
+            const toggleButtons = document.querySelectorAll('.input-group');
+            toggleButtons.forEach(group => {
+                group.addEventListener('click', function() {
+                    const keep = this.getAttribute('data-keep') === 'true';
+                    this.setAttribute('data-keep', !keep);
+                    if (!keep) {
+                        this.classList.add('keep');
+                        this.classList.remove('clear');
+                    } else {
+                        this.classList.add('clear');
+                        this.classList.remove('keep');
+                    }
+                });
+                // Initialize classes
+                if (group.getAttribute('data-keep') === 'true') {
+                    group.classList.add('keep');
+                } else {
+                    group.classList.add('clear');
+                }
+            });
+
+            // Retake button
+            document.getElementById('retake-button').addEventListener('click', function() {
+                fetchNewImage();
+            });
+
+            // Image transformation buttons
+            document.getElementById('rotate-left-button').addEventListener('click', function() {
+                transformImage('Rotate', { angle: '270' });
+            });
+
+            document.getElementById('rotate-right-button').addEventListener('click', function() {
+                transformImage('Rotate', { angle: '90' });
+            });
+
+            document.getElementById('raw-button').addEventListener('click', function() {
+                transformImage('Raw', {});
+            });
+
+            // Submit and continue button
+            document.getElementById('submit-button').addEventListener('click', function() {
+                submitForm();
+            });
+
+            // Toggle all fields button (Clear all)
+            document.getElementById('toggle-button').addEventListener('click', function() {
+                // Clear all input values
+                document.querySelectorAll('.input-group input, .custom-field input').forEach(input => {
+                    input.value = '';
+                });
+
+                // Set all fields to "clear" state
+                document.querySelectorAll('.input-group').forEach(group => {
+                    group.setAttribute('data-keep', 'false');
+                    group.classList.add('clear');
+                    group.classList.remove('keep');
+                });
+            });
+
+            // Add custom field button
+            document.getElementById('add-field-button').addEventListener('click', function() {
+                addCustomField();
+            });
+        });
+
+        // Function to fetch a new image
+        function fetchNewImage() {
+            fetch('/get_image')
+                .then(response => response.json())
+                .then(data => {
+                    updateImage(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Function to transform the current image
+        function transformImage(transformation, parameters) {
+            const requestData = {
+                transformation: transformation,
+                parameters: parameters
+            };
+
+            fetch('/transform_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateImage(data);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Function to update the image on the page
+        function updateImage(data) {
+            document.getElementById('captured-image').src = data.image_data;
+            document.getElementById('captured-image').alt = data.image_name;
+        }
+
+        // Function to submit the form
+        function submitForm() {
+            // Collect all form data
+            const metadata = {};
+
+            // Get standard fields
+            document.querySelectorAll('.input-group').forEach(group => {
+                const input = group.querySelector('input');
+                if (input && input.value) {
+                    metadata[input.name] = input.value;
+                }
+            });
+
+            // Get custom fields
+            document.querySelectorAll('.custom-field').forEach(field => {
+                const nameInput = field.querySelector('input[placeholder="Name"]');
+                const valueInput = field.querySelector('input[placeholder="Value"]');
+                if (nameInput && valueInput && nameInput.value && valueInput.value) {
+                    metadata[nameInput.value] = valueInput.value;
+                }
+            });
+
+            // Create the payload
+            const payload = {
+                metadata: metadata,
+            };
+
+            fetch('/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear fields that are not marked as "keep"
+                    document.querySelectorAll('.input-group').forEach(group => {
+                        if (group.getAttribute('data-keep') !== 'true') {
+                            const input = group.querySelector('input');
+                            if (input) input.value = '';
+                        }
+                    });
+
+                    // Clear all custom fields
+                    document.querySelectorAll('.custom-field').forEach(field => {
+                        field.remove();
+                    });
+
+                    // Get a new image
+                    fetchNewImage();
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Function to add a custom field
+        function addCustomField() {
+            const container = document.getElementById('custom-fields-container');
+
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'custom-field';
+
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.placeholder = 'Name';
+
+            const valueInput = document.createElement('input');
+            valueInput.type = 'text';
+            valueInput.placeholder = 'Value';
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'remove-field';
+            removeButton.textContent = 'X';
+            removeButton.addEventListener('click', function() {
+                fieldDiv.remove();
+            });
+
+            fieldDiv.appendChild(nameInput);
+            fieldDiv.appendChild(valueInput);
+            fieldDiv.appendChild(removeButton);
+
+            container.appendChild(fieldDiv);
+        }
+    </script>
+</body>
+</html>
