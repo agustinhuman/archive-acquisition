@@ -62,14 +62,16 @@ class ExtractDocument(Preprocessor):
 
     def simplify(self):
         """Loads an image and simplifies it"""
+        self.image = self.original_image.copy()
+        cv2.copyMakeBorder(self.original_image,self.image, 1, 1, 1, 1, cv2.BORDER_CONSTANT, 100)
+
         self.ratio = self.image.shape[0] / 500.0
         image = imutils.resize(self.image, height = 500)
         # convert the image to grayscale, blur it and find edges
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        cv2.GaussianBlur(gray, (5, 5), 0)
-        edged = cv2.Canny(gray, 75, 200)
-        self.image = edged
-        self.transformations["simplified"] = edged.copy()
+        cv2.GaussianBlur(gray, (5, 5), 5)
+        self.image = gray
+        self.transformations["simplified"] = gray.copy()
 
     def _preprocess(self) -> bytes:
         self.simplify()
@@ -79,9 +81,13 @@ class ExtractDocument(Preprocessor):
         return cv2.imencode('.jpg', self.image)[1].tobytes()
 
     def detect_contours(self):
-        contours = cv2.findContours(self.image.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        edged = cv2.Canny(self.image, 200, 220)
+        contours = cv2.findContours(edged, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         contours = imutils.grab_contours(contours)
         contours = sorted(contours, key=cv2.contourArea, reverse=True)[:5]
+
+        color = cv2.cvtColor(self.image, cv2.COLOR_GRAY2BGR)
+        self.transformations["contours"] = cv2.drawContours(color, contours, -1, (0, 255, 0), 1)
 
         document_contour = None
         for contour in contours:
@@ -100,7 +106,6 @@ class ExtractDocument(Preprocessor):
         self.contours = document_contour
 
         self.image = document_contour
-        self.transformations["contours"] = document_contour.copy()
 
 
     def project(self):
@@ -135,5 +140,8 @@ class Rotate(Preprocessor):
         return cv2.imencode('.jpg', image)[1].tobytes()
 
 if __name__ == '__main__':
-    image = Path("photo.jpg")
-    ExtractDocument(image.read_bytes()).run()
+    image = Path("sample_images/document.jpg")
+    et = ExtractDocument(image.read_bytes())
+    et.run()
+    for i in ["projected", "simplified", "contours", "drawn"]:
+        cv2.imwrite (f'{i}.jpg', et.transformations[i])

@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     provider = Phone(
         raw_conf,
-        mock_photo=Path("photo.jpg") if DEBUG else None
+        mock_photo=Path("sample_images/photo.jpg") if DEBUG else None
     )
 
     preprocessor = ExtractDocument
